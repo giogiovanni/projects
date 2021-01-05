@@ -1,0 +1,89 @@
+dashes = "---------"
+counter = 0
+search = 10
+result_ = "Game not finished"
+lst_ = ""
+
+if counter == 0:
+    lst = "         "
+
+
+    print(dashes)
+    print("| " + lst[0] + " " + lst[1] + " " + lst[2] + " |")
+    print("| " + lst[3] + " " + lst[4] + " " + lst[5] + " |")
+    print("| " + lst[6] + " " + lst[7] + " " + lst[8] + " |")
+    print(dashes)
+
+
+while search == 10 :
+    i, j = input("Enter the Coordinates: ").split()
+
+    if i not in '1234567890' or j not in '1234567890':
+        print("You should enter numbers!")
+        search = 10
+    elif int(i) <= 0 or int(i) >= 4 or  int(j) <= 0 or  int(j) >= 4:
+        print("Coordinates should be from 1 to 3!")
+        search = 10
+    elif int(i) == 1:
+        search = int(j) - int(i)
+        if lst[search] != " ":
+            print("This cell is occupied! Choose another one")
+            search = 10
+    elif int(i) == 2:
+        search = int(i) + int(j)
+        if lst[search] != " ":
+            print("This cell is occupied! Choose another one")
+            search = 10
+    elif int(i) == 3:
+        search = int(i) + int(j) + 2
+        if lst[search] != " ":
+            print("This cell is occupied! Choose another one")
+            search = 10
+
+    while search != 10:
+        if result_ == "Game not finished":
+            if counter % 2 ==0:
+                x_or_o = "X"
+            else:
+                x_or_o = "O"
+            if counter == 0:
+                lst_ = lst[:search] + x_or_o + lst[search + 1:]
+            else:
+                if lst_[search] != " ":
+                    print("This cell is occupied! Choose another one")
+                    counter = counter -1
+                    search = 10
+                lst_ = lst_[:search] + x_or_o + lst_[search + 1:]
+
+        counter += 1
+
+        print(dashes)
+        print("| " + lst_[0] + " " + lst_[1] + " " + lst_[2] + " |")
+        print("| " + lst_[3] + " " + lst_[4] + " " + lst_[5] + " |")
+        print("| " + lst_[6] + " " + lst_[7] + " " + lst_[8] + " |")
+        print(dashes)
+
+        if abs(lst_.count("X") - lst_.count("O")) >= 2:
+            print("Impossible")
+
+        elif lst_[:3] == "XXX" or lst_[6:] == "XXX" or lst_[::3] == "XXX" or lst_[1:8:3] == "XXX" or lst_[2:9:3] == "XXX" \
+                or lst_[3:6:1] == "XXX" or lst_[0:9:4] == "XXX" or lst_[0:10:4] == "XXX" or lst_[2:8:3] == "XXX"\
+                or lst_[2:7:2] == "XXX":
+            result_ = "X wins"
+            print(result_)
+        elif lst_[:3] == "OOO" or lst_[6:] == "OOO" or lst_[::3] == "OOO" or lst_[1:8:3] == "OOO" or lst_[2:9:3] == "OOO"\
+                or lst_[3:6:1] == "OOO" or lst_[0:9:4] == "OOO" or lst_[0:10:4] == "OOO" or lst_[2:8:3] == "OOO"\
+                or lst_[2:7:2] == "OOO":
+            result_ = "O wins"
+            print(result_)
+
+        elif [lst_ for sublist in lst_ for lst_ in sublist if lst_ == " "]:
+            result_ = "Game not finished"
+
+        elif [lst_ for sublist in lst_ for lst_ in sublist if lst_ != " "]:
+            result_ = "Draw"
+            print(result_)
+        if result_ != "Game not finished":
+            exit()
+        else:
+            search = 10
