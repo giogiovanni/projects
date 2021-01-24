@@ -1,0 +1,225 @@
+import sqlite3
+conn = sqlite3.connect('card.s3db')
+# print('Connected')
+
+cur = conn.cursor()
+cur.execute('DROP TABLE card')
+cur.execute('CREATE TABLE card (id INTEGER, number TEXT, pin TEXT, balance INTEGER DEFAULT 0)')
+# print('Table created')
+
+
+class Card:
+    def __init__(self):
+        self.iin = '400000'
+        self.choice = 4
+        self.card_num = None
+        self.pin = None
+        self.check_sum = None
+        self.bal_choice = None
+        self.acct_balance = 0
+        self.income = 0
+        self.card_num2 = None
+        self.card_num_compare = None
+        self.income2 = 0
+        self.balance1 = 0
+        self.balance2 = 0
+        self.transfer_num = None
+
+    def menu(self):
+        print('1. Create an account')
+        print('2. Log into account')
+        print('0. Exit')
+        choice = int(input('>'))
+        if choice == 1:
+            self.create()
+        elif choice == 2:
+            self.login()
+        else:
+            print('Bye!')
+            exit()
+
+    def create(self):
+        from random import randint
+        import random
+        iin = '400000'
+        card_list_num = []
+        card_num_even = []
+        card_num_odd = []
+        card_num_scrubbed = []
+
+        self.card_num = iin + str(random.randint(100000000, 999999999))
+
+        card_list_num.append(int(self.card_num))
+
+        for i in range(0, len(self.card_num), 2):
+            card_num_odd.append(int(self.card_num[i]) * 2)
+
+        for j in range(1, len(self.card_num), 2):
+            card_num_even.append(int(self.card_num[j]))
+
+        card_num_to = card_num_even + card_num_odd
+
+        for k in range(0, len(card_num_to)):
+            if card_num_to[k] > 9:
+                card_num_scrubbed.append(int(card_num_to[k] - 9))
+            else:
+                card_num_scrubbed.append(int(card_num_to[k]))
+
+        sum_ = sum(card_num_scrubbed)
+
+        if sum_ % 10 != 0:
+            check_sum = (10 - (sum_ % 10))
+        else:
+            check_sum = 0
+        self.card_num = str(self.card_num) + str(check_sum)
+
+        print('Your card has been created')
+        print('Your card number:')
+        print(self.card_num)
+
+        print('Your card PIN:')
+        self.pin = str(randint(1000, 9999))
+        print(self.pin)
+        cur.execute('INSERT INTO card (number, pin, balance) VALUES ({},{},{})'.format(self.card_num, self.pin,
+                                                                                       self.acct_balance))
+        conn.commit()
+#        cur.execute('SELECT * FROM CARD')
+#       print(cur.fetchall())
+        self.menu()
+
+    def login(self):
+        card_num = input('Enter your card number:')
+        pin = input('Enter your PIN:')
+
+        cur.execute('SELECT number, pin FROM card WHERE number = {} AND pin = {}'.format(card_num, pin))
+        if cur.fetchone():
+            print('You have successfully logged in!')
+            self.transfer_num = card_num
+            self.balance()
+
+        else:
+            print('Wrong card number or PIN!')
+            self.menu()
+
+    def add_income(self):
+        print('Enter income:')
+        self.income = input('>')
+        cur.execute('UPDATE card SET balance = balance + {} WHERE number = {}'.format(self.income, self.transfer_num))
+
+        conn.commit()
+        print('Income was added!')
+        cur.execute('SELECT * from card WHERE number = {}'.format(self.transfer_num))
+        print(cur.fetchone())
+
+    def transfer_do(self):
+        card_list_num2 = []
+        card_num_even2 = []
+        card_num_odd2 = []
+        card_num_scrubbed2 = []
+
+        print('Transfer')
+        print('Enter card number:')
+        self.card_num2 = input('>')
+
+        for j in range(0, len(self.card_num2) - 1):
+            card_list_num2.append(int(self.card_num2[j]))
+
+        for i in range(0, len(card_list_num2), 2):
+            card_num_odd2.append(int(card_list_num2[i]) * 2)
+
+        for j in range(1, len(card_list_num2), 2):
+            card_num_even2.append(int(card_list_num2[j]))
+
+        card_num_to = card_num_even2 + card_num_odd2
+
+        for k in range(0, len(card_num_to)):
+            if card_num_to[k] > 9:
+                card_num_scrubbed2.append(int(card_num_to[k] - 9))
+            else:
+                card_num_scrubbed2.append(int(card_num_to[k]))
+
+        sum_ = sum(card_num_scrubbed2)
+
+        if sum_ % 10 != 0:
+            check_sum2 = (10 - (sum_ % 10))
+        else:
+            check_sum2 = 0
+
+        card_list_final = ''.join(str(item) for item in card_list_num2)
+
+        self.card_num_compare = str(card_list_final + str(check_sum2))
+
+        if self.card_num_compare != self.card_num2:
+            print('Probably you made a mistake in the card number. Please try again!')
+            self.transfer_do()
+        if self.card_num2 == self.transfer_num:
+            print("You can't transfer money to the same account!")
+            self.transfer_do()
+        if self.card_num_compare == self.card_num2:
+            cur.execute('SELECT rowid, number, pin, balance FROM card WHERE number = {}'.format(self.card_num2))
+            if cur.fetchone():
+                print('Enter how much money you want to transfer:')
+                self.income2 = input('>')
+                cur.execute('SELECT balance FROM card WHERE number = {}'.format(self.transfer_num))
+                if int(self.income2) > cur.fetchone()[0]:
+                    print('Not enough money!')
+                    self.balance()
+                else:
+                    cur.execute('UPDATE card SET balance = balance - {} WHERE number = {}'.format(self.income2,
+                                                                                                  self.transfer_num))
+                    conn.commit()
+                    cur.execute('UPDATE card SET balance = balance + {} WHERE number = {}'.format(self.income2,
+                                                                                                  self.card_num2))
+                    conn.commit()
+                    print('Success!')
+                    self.balance()
+            else:
+                print('Such a card does not exist.')
+                self.balance()
+        else:
+            print('NOPE')
+
+    def balance(self):
+        print('1. Balance')
+        print('2. Add Income')
+        print('3. Do transfer')
+        print('4. Close account')
+        print('5. Log Out')
+        print('0. Exit')
+        self.bal_choice = input('>')
+        if self.bal_choice == '1':
+            cur.execute('SELECT balance FROM card WHERE number = {}'.format(self.transfer_num))
+            conn.commit()
+            print(cur.fetchone()[0])
+
+#           print(f'Balance: {self.acct_balance}')
+            self.balance()
+        if self.bal_choice == '2':
+            self.add_income()
+            self.balance()
+        if self.bal_choice == '3':
+            self.transfer_do()
+        if self.bal_choice == '4':
+            self.close_acct()
+            self.card_num = None
+            self.pin = None
+            self.menu()
+        if self.bal_choice == '5':
+            self.pin = None
+            self.card_num = None
+            print('You have successfully logged out')
+            self.menu()
+        if self.bal_choice == '0':
+            self.pin = None
+            self.card_num = None
+            print('Bye')
+            exit()
+
+    def close_acct(self):
+        cur.execute('DELETE FROM card WHERE number = {} '.format(self.card_num))
+        conn.commit()
+        print('The account has been closed!')
+
+
+new_attempt = Card()
+new_attempt.menu()
